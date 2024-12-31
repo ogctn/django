@@ -26,3 +26,13 @@
 		}
 
 	python manage.py manage.py migrate
+
+
+
+# links
+https://www.youtube.com/watch?v=2Z9kRgtqAEw
+https://www.youtube.com/watch?v=H3N3-S7s8IY
+https://www.youtube.com/watch?v=mScd-Pc_pX0
+https://www.youtube.com/watch?v=OojA7SPViEs
+https://www.django-rest-framework.org/
+https://www.youtube.com/watch?v=3aVqWaLjqS4&list=PL-osiE80TeTtoQCKZ03TU5fNfx2UY6U4p&index=8
