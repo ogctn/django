@@ -1,19 +1,4 @@
 #!/bin/bash
-# # PostgreSQL hazır olana kadar bekle
-# echo "Waiting for PostgreSQL to start..."
-
-# while ! nc -z postgres 5432; do
-#   sleep 1
-# done
-
-# echo "PostgreSQL is up - continuing..."
-
-# # Django migrasyon ve sunucuyu başlat
-# python manage.py collectstatic --noinput
-# python manage.py makemigrations
-# python manage.py makemigrations users --noinput
-# python manage.py migrate
-# python manage.py runserver 0.0.0.0:8000
 
 set -e  # Hata durumunda script'i durdur
 
@@ -35,10 +20,6 @@ python manage.py collectstatic --noinput
 echo "Running database migrations..."
 python manage.py makemigrations
 python manage.py migrate
-
-# Kullanıcı modeli migrasyonu (Varsa)
-# echo "Running user migrations (if exists)..."
-# python manage.py makemigrations users || echo "Users app not found, skipping..."
 
 # Django sunucusunu başlat
 echo "Starting Django server..."

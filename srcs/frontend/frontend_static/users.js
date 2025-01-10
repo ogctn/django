@@ -148,6 +148,27 @@ async function getQrCodeImage() {
     }
 }
 
+async function fetchUserBio() {
+    try {
+        const response = await fetch(`${API_BASE}/user-bio/`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            document.getElementById('bio-text').value = data.bio || '';  // Bio yoksa boş bırak
+        } else {
+            console.warn('Bio yüklenirken hata oluştu.');
+        }
+    } catch (error) {
+        console.error('Bio yüklenirken hata oluştu:', error);
+    }
+}
 // Form İşlemleri
 function attachFormHandlers() {
     // Login ve Register Yönlendirme
@@ -176,7 +197,43 @@ function attachFormHandlers() {
         loadUserProfile();
     });
 
-    document.getElementById('my-profile-button')?.addEventListener('click', openMyProfile);
+    document.getElementById('save-bio')?.addEventListener('click', async () => {
+        const bioText = document.getElementById('bio-text').value;
+    
+        if (!bioText) {
+            alert('Lütfen bio alanını doldurun.');
+            return;
+        }
+    
+        try {
+            const response = await fetch(`${API_BASE}/update-bio/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access')}`
+                },
+                body: JSON.stringify({ bio: bioText })  // Bio bilgisini JSON olarak gönder
+            });
+    
+            const data = await response.json();
+    
+            if (response.ok) {
+                alert('Bio başarıyla güncellendi!');
+                // Güncellenen bio bilgisini doğrudan sayfada göster
+                document.getElementById('bio-text').value = data.bio;
+            } else {
+                alert(data.error || 'Bio güncellenirken bir hata oluştu.');
+            }
+        } catch (error) {
+            console.error('Bio güncellenirken hata oluştu:', error);
+            alert('Bir hata meydana geldi. Lütfen tekrar deneyin.');
+        }
+    });
+
+    if (document.getElementById('bio-text'))
+    {
+        fetchUserBio();
+    }
     // Kod Dogrulama
     document.getElementById('verifyButtonTwoFactor')?.addEventListener('click', verifyTwoFactor);
 
@@ -256,12 +313,52 @@ function attachFormHandlers() {
                 alert('Something went wrong.');
             }
         });
-}
+    }
 
 // Intra Login (42 Intra OAuth)
-document.getElementById('intra-login-button')?.addEventListener('click', function() {
-    window.location.href = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-0d930db14b6e4ce5c5444d9e4a6ec2a7cbfebd777c72611065425e8de4f96f3d&redirect_uri=http%3A%2F%2Flocalhost%2F&response_type=code';
-});
+    document.getElementById('intra-login-button')?.addEventListener('click', function() {
+        window.location.href = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-0d930db14b6e4ce5c5444d9e4a6ec2a7cbfebd777c72611065425e8de4f96f3d&redirect_uri=http%3A%2F%2Flocalhost%2F&response_type=code';
+    });
+
+    const confirmUploadButton = document.getElementById('confirm-upload');
+    if (confirmUploadButton) {
+        confirmUploadButton.addEventListener('click', async function () {
+            const profilePicUrl = document.getElementById('upload-pic-url').value;
+
+            if (!profilePicUrl) {
+                alert('Lütfen bir resim URL\'si girin.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/upload-profile-pic/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access')}`,
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ profile_picture: profilePicUrl })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const profilePicElement = document.getElementById('profile-pic');
+                    profilePicElement.src = data.profile_picture;
+                    alert('Profil fotoğrafı başarıyla güncellendi!');
+                } else {
+                    alert(data.error || 'Resim yüklenirken bir hata oluştu.');
+                }
+            } catch (error) {
+                console.error('Profil fotoğrafı güncellenirken hata oluştu:', error);
+                alert('Bir hata meydana geldi. Lütfen tekrar deneyin.');
+            }
+        });
+    } else {
+        console.warn('Profil fotoğrafı güncelleme butonu bulunamadı.');
+    }
 }
 
 // CSRF Token Al
@@ -351,4 +448,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 });
-

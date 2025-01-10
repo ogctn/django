@@ -12,4 +12,8 @@ urlpatterns = [
     path('setTwoFactor/', SetTwoFactorView.as_view(), name='setTwoFactor'),
     path('getQrCodeImage/', GetQrCode.as_view(), name='getQrCodeImage'),
     path('verifyTwoFactor/', VerifyTwoFactorView.as_view(), name='verifyTwoFactor'),
+    path('upload-profile-pic/', UploadProfilePictureView.as_view(), name='upload-profile-pic'),
+    path('user-bio/', UserBioView.as_view(), name='user-bio'),
+    path('update-bio/', UpdateBioView.as_view(), name='update-bio'),
+
 ]

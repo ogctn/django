@@ -14,6 +14,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import *
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework import status
 
 class VerifyTwoFactorView(APIView):
     permission_classes = [IsAuthenticated]
@@ -313,3 +315,63 @@ class SetTwoFactorView(APIView):
                 'error': 'Internal Server Error',
                 'details': str(e)
             }, status=500)
+        
+
+class UploadProfilePictureView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = [JWTAuthentication]
+
+    def post(self, request):
+        picture_url = request.data.get('profile_picture')  # URL olarak al
+        if not picture_url:
+            return Response({"error": "Resim URL'si sağlanmadı."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        user.profile_picture = picture_url
+        user.save()
+
+        serializer = CustomUserSerializer(user, context={'request': request})
+        return Response({
+            "status": "success",
+            "profile_picture": serializer.data['profile_picture']
+        }, status=status.HTTP_200_OK)
+    
+# Bio Güncelleme View
+class UpdateBioView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def put(self, request):
+        bio_text = request.data.get('bio')
+
+        if not bio_text:
+            return Response({"error": "Bio alanı boş olamaz."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        user.bio = bio_text
+        user.save()
+
+        return Response({
+            "status": "success",
+            "bio": user.bio
+        }, status=status.HTTP_200_OK)
+
+# Profil Bilgilerini Getirme View
+class UserBioView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            "username": user.username,
+            "email": user.email,
+            "bio": user.bio
+        }, status=status.HTTP_200_OK)
+        
+        
+
+
+
+
+

@@ -3,21 +3,18 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from .models import CustomUser
 #from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from social.serializers import FriendRequestSerializer
 
 class CustomUserSerializer(serializers.ModelSerializer):
-    friends = serializers.PrimaryKeyRelatedField(many=True, queryset=CustomUser.objects.all(),required=False)
-    following = serializers.PrimaryKeyRelatedField(many=True, queryset=CustomUser.objects.all(),required=False)
-    friend_requests = FriendRequestSerializer(many=True, required=False)
     class Meta:
         model = CustomUser
         fields = [
-            'id', 'username', 'email', 'password', 'friends', 'following', 
+            'id', 'username', 'email', 'password', 'friends', 'blocked_users', 
             'friend_requests', 'played_games', 'game_rank', 'isActiveTwoFactor',
-            'secret_key', 'qr_code'
+            'secret_key', 'qr_code', 'profile_picture', 'bio'
         ]
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'write_only': True},
+            'profile_picture': {'required': False}
         }
 
     def validate_password(self, value):
@@ -35,3 +32,4 @@ class CustomUserSerializer(serializers.ModelSerializer):
         )
         user.generate_secret_key()
         return user
+

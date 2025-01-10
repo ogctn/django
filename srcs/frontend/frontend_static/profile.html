@@ -2,8 +2,22 @@
     <h1>Welcome to Profile-Page</h1>
     <h1>Profile-Page</h1>
     <div id="profile-info">
+        <img id="profile-pic" src="frontend_static/default_profile.png" alt="Profile Picture">
+        
+        <div class="upload-section">
+            <input type="url" id="upload-pic-url" placeholder="Resim URL'si girin">
+            <button id="confirm-upload">Onayla</button>
+        </div>
+
         <p><strong>Username:</strong> <span id="username"></span></p>
         <p><strong>Email:</strong> <span id="email"></span></p>
+        
+        <!-- Bio Bölümü -->
+        <div class="bio-section">
+            <h3>Hakkımda</h3>
+            <textarea id="bio-text" placeholder="Kendiniz hakkında kısa bir açıklama girin..."></textarea>
+            <button id="save-bio">Kaydet</button>
+        </div>
     </div>
     
     <!-- Toggle Switch (On/Off) -->
@@ -20,3 +34,34 @@
     <button id="home-button">Home</button>
     <button id="my-profile-button">Profile</button>
 </div>
+
+<style>
+    #profile-pic {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        display: block;
+        margin: 20px auto;
+    }
+    .bio-section {
+        margin-top: 20px;
+        text-align: center;
+    }
+    #bio-text {
+        width: 80%;
+        height: 100px;
+        margin: 10px auto;
+        display: block;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 10px;
+        resize: none;
+    }
+    #save-bio {
+        margin-top: 10px;
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: p
