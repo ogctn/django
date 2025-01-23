@@ -7,12 +7,6 @@ from .ball import Ball
 from .paddle import Paddle
 import asyncio
 
-# Süleyman
-import datetime, time
-import requests
-
-
-
 GAME_WAITING = 0
 GAME_RUNNING = 1
 GAME_OVER = 2
@@ -21,23 +15,21 @@ rooms = dict()
 
 class GameSocketConsumer(AsyncWebsocketConsumer):
 
-    start_time = time.time()
     async def connect(self):
         await self.accept() # Accept the connection
         self.room_id = self.scope['url_route']['kwargs']['room_id'] 
-        self.username = self.scope['url_route']['kwargs']['username'] 
         if self.room_id not in rooms: # If the room does not exist, create it
             await self.create_game()
         game_state = await self.get_game_state()
         if len(game_state.players) < 2: # If there are less than 2 players, add the player
             if len(game_state.players) == 0: # If there are less than 2 players, add the player
-                game_state.add_player(Player(self.channel_name, 'right', Paddle((490, 250)), self.username))
+                game_state.add_player(Player(self.channel_name, 'right', Paddle((490, 250))))
                 await self.player_accept(game_state.players[0])
             elif len(game_state.players) == 1:
                 if game_state.players[0].side == 'right':
-                    game_state.add_player(Player(self.channel_name, 'left', Paddle((10, 250)), self.username))
+                    game_state.add_player(Player(self.channel_name, 'left', Paddle((10, 250))))
                 else:
-                    game_state.add_player(Player(self.channel_name, 'right', Paddle((10, 250)), self.username))
+                    game_state.add_player(Player(self.channel_name, 'right', Paddle((10, 250))))
                 await self.channel_layer.group_add(
                     self.room_id,
                     self.channel_name
@@ -92,7 +84,6 @@ class GameSocketConsumer(AsyncWebsocketConsumer):
 
     async def start_game(self):
         game_state = await self.get_game_state()
-        print("------->: ", game_state.players[0].name)
         if game_state.game_status != GAME_RUNNING:
             game_state.game_status = GAME_RUNNING
             game_state.ball = Ball([300, 600])
@@ -116,36 +107,7 @@ class GameSocketConsumer(AsyncWebsocketConsumer):
             goal = game_state.ball.check_goal(game_state.players)
             if goal != -1:
                 game_state.players[goal].score += 1
-                if game_state.players[goal].score == 1:
-                    
-                    # Süleyman
-                    # # POST https://localhost/api/dashboard/save_game_data/
-                    # body:
-                    # {
-                    #     "player1_name": "t1",
-                    #     "player2_name": "t2",
-                    #     "player1_goals": 5,
-                    #     "player2_goals": 3,
-                    #     "game_type": "casual",
-                    #     "game_date": "2021-07-01",
-                    #     "game_played_time": 12.5
-                    # }
-                    data = {
-                        "player1_name": str(game_state.players[0].name),
-                        "player2_name": str(game_state.players[1].name),
-                        "player1_goals": int(game_state.players[0].score),
-                        "player2_goals": int(game_state.players[1].score),
-                        "game_type": "casual",
-                        "game_date": str(datetime.datetime.now().strftime("%Y-%m-%d")),
-                        "game_played_time": float(time.time() - self.start_time)
-                    }
-                    try:
-                        response = requests.post('https://10.11.244.64/api/dashboard/save_game_data/', json=data, verify=False)
-                        response.raise_for_status()
-                    except requests.exceptions.RequestException as e:
-                        print(f'Error: {e}')
-                        print(f'Response content: {response.text}')
-
+                if game_state.players[goal].score == 3:
                     game_state.game_status = GAME_OVER
                     await self.channel_layer.group_send(
                         self.room_id,

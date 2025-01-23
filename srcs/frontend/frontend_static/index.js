@@ -1,9 +1,9 @@
 import {getCookie}  from "./users.js";
 
 // WebSocket bağlantısı
-export function initSocket() {
-    const socket = new WebSocket('wss://10.11.244.64/ws/game/test/' + getCookie("username") + '/');
-    console.log(getCookie("username"));
+export function initSocket(uid) {
+    const socket = new WebSocket('wss://10.11.244.64/ws/game/' + uid + '/');
+
     let playerId = null;
     let side = null;
     let score = [0, 0];

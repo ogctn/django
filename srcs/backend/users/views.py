@@ -156,13 +156,7 @@ class OAuthCallbackView(APIView):
             secure=True,
             samesite='None'
         )
-        response.set_cookie(
-            key='username',
-            value=user.username,
-            httponly=False,
-            secure=True,
-            samesite='None'
-        )
+
         return response
 
 class CSRFTokenView(APIView):
@@ -241,13 +235,6 @@ class LoginView(APIView):
             key='access',
             value=str(refresh.access_token),  # Refresh token cookie'ye yazılır
             httponly=True,
-            secure=True,
-            samesite='None'
-        )
-        response.set_cookie(
-            key='username',
-            value=user.username,
-            httponly=False,
             secure=True,
             samesite='None'
         )

@@ -30,6 +30,16 @@ services:
     container_name: game
     entrypoint: |
       bash -c "
+        python manage.py migrate admin zero
+        python manage.py migrate users zero
+        python manage.py makemigrations users
+        python manage.py migrate users
+        python manage.py makemigrations social
+        python manage.py migrate social
+        python manage.py makemigrations dashboard
+        python manage.py migrate dashboard
+        python manage.py makemigrations admin
+        python manage.py migrate admin
         python manage.py makemigrations &&
         python manage.py migrate &&
         python manage.py runserver 0.0.0.0:8001
@@ -65,7 +75,7 @@ services:
     volumes:
       - ./srcs/nginx:/etc/nginx/conf.d
       - ./srcs/backend/static:/usr/share/nginx/html/bstatic
-      - ./srcs/frontend:/usr/share/nginx/html
+      - ./srcs/three-demo:/usr/share/nginx/html
       - ./srcs/frontend/frontend_static:/usr/share/nginx/html/frontend_static
     networks:
       - trans_network

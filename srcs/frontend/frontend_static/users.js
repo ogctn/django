@@ -1,5 +1,80 @@
 import { initSocket } from "./index.js";
 
+const token = localStorage.getItem('access');
+
+
+const socket = new WebSocket(`wss://10.11.244.64/ws/gamerequest/${token}/`);
+
+socket.onopen = () => {
+};
+
+socket.onmessage = function (e) {
+		const data = JSON.parse(e.data);
+		if (data.type === "game_request") {
+				const gameRequestList = document.getElementById('game-requests');
+				if (!gameRequestList) document.getElementById('requests-button')?.click()
+				gameRequestList.innerHTML = ''; // Listeyi temizle
+
+				const li = document.createElement('li');
+				li.textContent = `${data.sender}`;
+
+				const acceptButton = document.createElement('button');
+				acceptButton.textContent = 'Accept Game Request';
+				acceptButton.classList.add('accept-game');
+				acceptButton.addEventListener('click', async () => {
+						await acceptGameRequest(data.sender);
+				});
+				li.appendChild(acceptButton);
+				const declineButton = document.createElement('button');
+				declineButton.textContent = 'Decline Game Request';
+				declineButton.classList.add('decline-game');
+				declineButton.addEventListener('click', async () => {
+				});
+				li.appendChild(declineButton);
+				gameRequestList.appendChild(li);
+		} else if (data.type === "accept_request") {
+				loadPage('frontend_static/game.html')
+				initSocket(data.uid);
+		}
+};
+
+socket.onclose = () => {
+    console.log("WebSocket bağlantısı kapandı.");
+};
+
+async function sendGameRequest(username) {
+		console.log(username);
+		socket.send(
+				JSON.stringify({
+						type: "send_request",
+						receiver: username,
+				})
+		);
+}
+
+async function acceptGameRequest(username) {
+		const uid = crypto.randomUUID()
+		socket.send(
+				JSON.stringify({
+						type: "accept_request",
+						receiver: username,
+						uid: uid,
+				})
+		);
+		loadPage('frontend_static/game.html')
+    initSocket(uid);
+}
+
+async function declineGameRequest(username) {
+		console.log(username);
+		socket.send(
+				JSON.stringify({
+						type: "decline_request",
+						receiver: username,
+				})
+		);
+}
+
 const appDiv = document.getElementById('app');
 const API_BASE = '/api/users';
 const API_URLS = {
@@ -293,7 +368,7 @@ async function fetchFriendList() {
             credentials: 'include'
         });
 
-        if (response.ok) {
+        if (response.ok) { 
             const data = await response.json();
             const friendList = document.getElementById('friends');
             friendList.innerHTML = ''; // Listeyi temizle
@@ -302,20 +377,26 @@ async function fetchFriendList() {
                 const li = document.createElement('li');
                 li.textContent = `${friend.username} - ${new Date(friend.friendship_date).toLocaleString()}`;
 
-                const blockButton = document.createElement('button');
-                blockButton.textContent = 'Block';
-                blockButton.classList.add('block-user');
-                blockButton.addEventListener('click', async () => {
-                    const success = await blockUser(friend.username);
-                    if (success) {
-                        fetchFriendList(); // Listeyi güncelle
-                        fetchBlockedList();
-                    }
-                });
-
-                li.appendChild(blockButton);
-                friendList.appendChild(li);
-            });
+								const blockButton = document.createElement('button');
+								blockButton.textContent = 'Block';
+								blockButton.classList.add('block-user');
+								blockButton.addEventListener('click', async () => {
+										const success = await blockUser(friend.username);
+										if (success) {
+												fetchFriendList(); // Listeyi güncelle
+												fetchBlockedList();
+										}
+								});
+								li.appendChild(blockButton);
+								const gameRequestButton = document.createElement('button');
+								gameRequestButton.textContent = 'Send Game Request';
+								gameRequestButton.classList.add('game-request');
+								gameRequestButton.addEventListener('click', async () => {
+										await sendGameRequest(friend.username);
+								});
+								li.appendChild(gameRequestButton);
+								friendList.appendChild(li);
+						});
         } else {
             console.error('Failed to fetch friend list:', response.statusText);
         }

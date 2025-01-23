@@ -8,32 +8,19 @@ from .utils import updateUsersAfterSave
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
-# Süleyman
-# POST https://localhost/api/dashboard/save_game_data/
-# body:
-# {
-#     "player1_name": "t1",
-#     "player2_name": "t2",
-#     "player1_goals": 5,
-#     "player2_goals": 3,
-#     "game_type": "casual",
-#     "game_date": "2021-07-01",
-#     "game_played_time": 12.5
-# }
+
 class SaveGameDataView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         try:
             data = request.data
-            # Oyuncuları getirirken hata oluşabilir
             try:
                 player1 = get_object_or_404(CustomUser, username=data['player1_name'])
                 player2 = get_object_or_404(CustomUser, username=data['player2_name'])
             except Exception as e:
                 return Response({'error': f'Player retrieval error: {str(e)}'}, status=400)
 
-            # Kazanan ve kaybeden belirle
             if data['player1_goals'] > data['player2_goals']:
                 winner, loser = player1, player2
             elif data['player1_goals'] < data['player2_goals']:
@@ -41,7 +28,6 @@ class SaveGameDataView(APIView):
             else:
                 return Response({'error': 'The game cannot end in a tie.'}, status=400)
 
-            # GameData oluştur
             try:
                 game_data = GameData.objects.create(
                     game_type=data['game_type'],
@@ -64,8 +50,8 @@ class SaveGameDataView(APIView):
                     game_date=data['game_date'],
                     game_played_time=data['game_played_time'],
                 )
-                game_data.save()    # Süleyman
-                updateUsersAfterSave(game_data) # Süleyman
+                game_data.save()
+                updateUsersAfterSave(game_data)
             except Exception as e:
                 return Response({'error': f'Game data creation error: {str(e)}'}, status=500)
 
@@ -75,13 +61,10 @@ class SaveGameDataView(APIView):
             return Response({'error': f'Unexpected error: {str(e)}'}, status=500)
 
 
-# Süleyman
-# GET https://localhost/api/dashboard/get_user_profile_stats/?username=t1
 class GetUserProfileStatsView(APIView):
-    permission_classes = [AllowAny]  # Süleyman
+    permission_classes = [AllowAny]
     def get(self, request, *args, **kwargs):
         try:
-            # Token'dan gelen kullanıcı
             username = request.GET.get('username')
             if username:
                 user = get_object_or_404(CustomUser, username=username)
@@ -108,10 +91,8 @@ class GetUserProfileStatsView(APIView):
             return Response({'error': str(e)}, status=500)
 
 
-# Süleyman
-# GET https://localhost/api/dashboard/get_game_stats/?game_id=1
 class GetGameStatsView(APIView):
-    permission_classes = [AllowAny] # Süleyman
+    permission_classes = [AllowAny]
     def get(self, request, *args, **kwargs):
         try:
             game_id = request.GET.get('game_id')

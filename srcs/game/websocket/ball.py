@@ -8,7 +8,7 @@ class Ball:
         self.velocityY = 200
         self.radius =  10
         self.game_width = 1200
-        self.game_height = 600
+        self.game_height = 600 
 
     def update_ball(self):
         self.current_time = time.time()
@@ -38,12 +38,12 @@ class Ball:
             paddle_left = players[1].paddle.position[1]
             paddle_right = players[0].paddle.position[1]
         if self.position[1] + self.radius > self.game_width:
-            if self.position[0] < paddle_right or self.position[0] > paddle_right + players[1].paddle.paddle_height:
+            if self.position[0] < paddle_right or self.position[0] > paddle_right + 100:
                     return 0
             else: 
                 self.velocityX *= -1
         if self.position[1] - self.radius < 0:
-            if self.position[0] < paddle_left or self.position[0] > paddle_left + players[1].paddle.paddle_height:
+            if self.position[0] < paddle_left or self.position[0] > paddle_left + 100:
                     return 1
             else: 
                 self.velocityX *= -1
