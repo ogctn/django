@@ -5,6 +5,7 @@ services:
     container_name: django
     entrypoint: |
       bash -c "
+        python manage.py makemigrations &&
         python manage.py migrate &&
         python manage.py runserver 0.0.0.0:8000
       "
@@ -23,6 +24,30 @@ services:
       - trans_network
     restart: always
     
+  game:
+    build:
+      context: ./srcs/game
+    container_name: game
+    entrypoint: |
+      bash -c "
+        python manage.py makemigrations &&
+        python manage.py migrate &&
+        python manage.py runserver 0.0.0.0:8001
+      "
+    env_file: .env
+    ports:
+      - "8001:8001"
+    volumes:
+      - game_vol:/game
+      - ./srcs/game/static:/game/static
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - trans_network
+    restart: always
 
   nginx:
     build:
@@ -52,7 +77,7 @@ services:
     environment:
       POSTGRES_DB: mkati
       POSTGRES_USER: mkati
-      POSTGRES_PASSWORD: mkati123
+      POSTGRES_PASSWORD: mkati
     env_file: .env
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -103,6 +128,12 @@ volumes:
       type: none
       o: bind
       device: ./srcs/backend/
+  game_vol:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./srcs/game/
   pgdata:
     driver: local
   redis_data:

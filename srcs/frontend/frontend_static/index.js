@@ -1,123 +1,192 @@
-let gameState = 'start';
-let paddle_1 = document.querySelector('.paddle_1');
-let paddle_2 = document.querySelector('.paddle_2');
-let board = document.querySelector('.board');
-let initial_ball = document.querySelector('.ball');
-let ball = document.querySelector('.ball');
-let score_1 = document.querySelector('.player_1_score');
-let score_2 = document.querySelector('.player_2_score');
-let message = document.querySelector('.message');
-let paddle_1_coord = paddle_1.getBoundingClientRect();
-let paddle_2_coord = paddle_2.getBoundingClientRect();
-let initial_ball_coord = ball.getBoundingClientRect();
-let ball_coord = initial_ball_coord;
-let board_coord = board.getBoundingClientRect();
-let paddle_common =
-    document.querySelector('.paddle').getBoundingClientRect();
+import {getCookie}  from "./users.js";
 
-let dx = Math.floor(Math.random() * 4) + 3;
-let dy = Math.floor(Math.random() * 4) + 3;
-let dxd = Math.floor(Math.random() * 2);
-let dyd = Math.floor(Math.random() * 2);
+// WebSocket bağlantısı
+export function initSocket() {
+    const socket = new WebSocket('wss://10.11.244.64/ws/game/test/' + getCookie("username") + '/');
+    console.log(getCookie("username"));
+    let playerId = null;
+    let side = null;
+    let score = [0, 0];
+    let ballX = 600; // Başlangıç pozisyonları
+    let ballY = 300;
+    let leftPaddleY = 200;
+    let rightPaddleY = 200;
+    let gameState = "waiting";
 
-document.addEventListener('keydown', (e) => {
-if (e.key == 'Enter') {
-    gameState = gameState == 'start' ? 'play' : 'start';
-    if (gameState == 'play') {
-    message.innerHTML = 'Game Started';
-    message.style.left = 42 + 'vw';
-    requestAnimationFrame(() => {
-        dx = Math.floor(Math.random() * 4) + 3;
-        dy = Math.floor(Math.random() * 4) + 3;
-        dxd = Math.floor(Math.random() * 2);
-        dyd = Math.floor(Math.random() * 2);
-        moveBall(dx, dy, dxd, dyd);
+    const canvas = document.getElementById('pongCanvas');
+    const scoreBoard = document.getElementById('score');
+    const readyButton = document.getElementById('readyButton');
+    const ctx = canvas.getContext('2d');
+    const paddleWidth = 10;
+    const paddleHeight = 100;
+    const ballSize = 10;
+
+    // Oyuncu hareketleri
+    let upPressed = false;
+    let downPressed = false;
+    let upInterval;
+    let downInterval;
+
+    scoreBoard.innerHTML = "SCORE " + score[0] + " - " + score[1];
+
+    // Mesaj alındığında
+    socket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        if (data.type === "player_accept") {
+            playerId = data.player_id;
+            side = data.side;
+            if (side === "left") {
+                leftPaddleY = data.paddle;
+            }
+            if (side === "right") {
+                rightPaddleY = data.paddle;
+            }
+        } else if (data.type === "player_movement") {
+            if (data.side === "left") {
+                leftPaddleY = data.paddle;
+            }
+            if (data.side === "right") {
+                rightPaddleY = data.paddle;
+            }
+        } else if (data.type === "game_status") {
+            gameState = data.status;
+            if (gameState === "over") {
+                console.log(data);
+                if (data.winner === side) {
+                    scoreBoard.innerHTML = `Kazandiniz! SCORE: ${score[0]} - ${score[1]}`;
+                }
+                if (data.winner !== side) {
+                    scoreBoard.innerHTML = `Kaybettiniz! SCORE: ${score[0]} - ${score[1]}`;
+                }
+            }
+        } else if (data.type === "ball_movement") {
+            ballX = data.position[1];
+            ballY = data.position[0];
+        } else if (data.type === "score_update") {
+            if (data.side === "left") {
+                score[0] = data.score;
+            }
+            if (data.side === "right") {
+                score[1] = data.score;
+            }
+            scoreBoard.innerHTML = `SCORE: ${score[0]} - ${score[1]}`;
+        } else if (data.type === "state") {
+
+        }
+    };
+
+    socket.onopen = function () {
+        console.log("WebSocket bağlantısı kuruldu.");
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+                type: "get_state",
+
+            }));
+        }
+    };
+
+    socket.onclose = function () {
+        console.log("WebSocket bağlantısı kapandı.");
+    };
+
+    readyButton.addEventListener("click", () => {
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+                type: "player_ready",
+                player_id: playerId
+            }));
+        }
     });
-    }
-}
-if (gameState == 'play') {
-    if (e.key == 'w') {
-    paddle_1.style.top =
-        Math.max(
-        board_coord.top,
-        paddle_1_coord.top - window.innerHeight * 0.06
-        ) + 'px';
-    paddle_1_coord = paddle_1.getBoundingClientRect();
-    }
-    if (e.key == 's') {
-    paddle_1.style.top =
-        Math.min(
-        board_coord.bottom - paddle_common.height,
-        paddle_1_coord.top + window.innerHeight * 0.06
-        ) + 'px';
-    paddle_1_coord = paddle_1.getBoundingClientRect();
+
+    function sendMovement(direction) {
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+                type: "player_move",
+                player_id: playerId,
+                direction: direction
+            }));
+        }
     }
 
-    if (e.key == 'ArrowUp') {
-    paddle_2.style.top =
-        Math.max(
-        board_coord.top,
-        paddle_2_coord.top - window.innerHeight * 0.1
-        ) + 'px';
-    paddle_2_coord = paddle_2.getBoundingClientRect();
+    // Klavye olayları
+    function startMovement(direction) {
+        sendMovement(direction);
+        if (direction === "up") {
+            upInterval = setInterval(() => sendMovement("up"), 50);
+        } else if (direction === "down") {
+            downInterval = setInterval(() => sendMovement("down"), 50);
+        }
     }
-    if (e.key == 'ArrowDown') {
-    paddle_2.style.top =
-        Math.min(
-        board_coord.bottom - paddle_common.height,
-        paddle_2_coord.top + window.innerHeight * 0.1
-        ) + 'px';
-    paddle_2_coord = paddle_2.getBoundingClientRect();
-    }
-}
-});
 
-function moveBall(dx, dy, dxd, dyd) {
-if (ball_coord.top <= board_coord.top) {
-    dyd = 1;
-}
-if (ball_coord.bottom >= board_coord.bottom) {
-    dyd = 0;
-}
-if (
-    ball_coord.left <= paddle_1_coord.right &&
-    ball_coord.top >= paddle_1_coord.top &&
-    ball_coord.bottom <= paddle_1_coord.bottom
-) {
-    dxd = 1;
-    dx = Math.floor(Math.random() * 4) + 3;
-    dy = Math.floor(Math.random() * 4) + 3;
-}
-if (
-    ball_coord.right >= paddle_2_coord.left &&
-    ball_coord.top >= paddle_2_coord.top &&
-    ball_coord.bottom <= paddle_2_coord.bottom
-) {
-    dxd = 0;
-    dx = Math.floor(Math.random() * 4) + 3;
-    dy = Math.floor(Math.random() * 4) + 3;
-}
-if (
-    ball_coord.left <= board_coord.left ||
-    ball_coord.right >= board_coord.right
-) {
-    if (ball_coord.left <= board_coord.left) {
-    score_2.innerHTML = +score_2.innerHTML + 1;
-    } else {
-    score_1.innerHTML = +score_1.innerHTML + 1;
+    function stopMovement(direction) {
+        if (direction === "up") {
+            clearInterval(upInterval);
+            upPressed = false;
+        } else if (direction === "down") {
+            clearInterval(downInterval);
+            downPressed = false;
+        }
     }
-    gameState = 'start';
 
-    ball_coord = initial_ball_coord;
-    ball.style = initial_ball.style;
-    message.innerHTML = 'Press Enter to Play Pong';
-    message.style.left = 38 + 'vw';
-    return;
-}
-ball.style.top = ball_coord.top + dy * (dyd == 0 ? -1 : 1) + 'px';
-ball.style.left = ball_coord.left + dx * (dxd == 0 ? -1 : 1) + 'px';
-ball_coord = ball.getBoundingClientRect();
-requestAnimationFrame(() => {
-    moveBall(dx, dy, dxd, dyd);
-});
+    document.addEventListener("keydown", (event) => {
+        const key = event.key;
+
+        if ((key === "ArrowUp" || key === "w") && !upPressed) {
+            upPressed = true;
+            startMovement("up");
+        }
+        if ((key === "ArrowDown" || key === "s") && !downPressed) {
+            downPressed = true;
+            startMovement("down");
+        }
+    });
+
+    document.addEventListener("keyup", (event) => {
+        const key = event.key;
+
+        if (key === "ArrowUp" || key === "w") {
+            stopMovement("up");
+        }
+        if (key === "ArrowDown" || key === "s") {
+            stopMovement("down");
+        }
+    });
+
+
+    // Çizim fonksiyonları
+    function drawRect(x, y, width, height, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, width, height);
+    }
+
+    function drawCircle(x, y, size, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Ekranı çiz
+    function draw() {
+        // Temizle
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Arkaplan
+        drawRect(0, 0, canvas.width, canvas.height, 'black');
+
+        // Top
+        drawCircle(ballX, ballY, ballSize, 'white');
+
+        // Pedallar
+        drawRect(0, leftPaddleY, paddleWidth, paddleHeight, 'white');
+        drawRect(canvas.width - paddleWidth, rightPaddleY, paddleWidth, paddleHeight, 'white');
+    }
+
+    // Oyun döngüsü
+    function gameLoop() {
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
 }

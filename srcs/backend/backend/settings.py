@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'users',
     'social',
+    'dashboard',
 ]
 
 # REST framework settings
@@ -102,7 +103,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": 'mkati',
         "USER": 'mkati',
-        "PASSWORD": 'mkati123',
+        "PASSWORD": 'mkati',
         "HOST": 'postgres',
         "PORT": '5432'
     }
@@ -182,3 +183,5 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'id',
 }
+
+USE_MOCK_DATA = True  # Sahte verileri etkinleştirmek için True yapın

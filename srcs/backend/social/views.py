@@ -14,6 +14,7 @@ from .decorators import follow_check, unfollow_check, \
                         friendReq_check, friendAccept_check, \
                         friendReqCancel_check, unfriend_check, \
                         block_check, unblock_check
+from django.views.decorators.csrf import csrf_exempt
 
 User = get_user_model()
 
@@ -97,7 +98,7 @@ class FriendViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['sender_username', 'receiver_username', 'is_accepted']
 
-
+    @csrf_exempt
     @action(detail=False, methods=['post'], url_path='request')
     @friendReq_check(to_control='target_name')
     def custom_create(self, request):

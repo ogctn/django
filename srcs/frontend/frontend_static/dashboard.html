@@ -1,0 +1,82 @@
+<div id="profile-stats-section" class="profile-stats">
+    <h3>Kullanıcı Profil İstatistikleri</h3>
+    <table id="profile-stats-table">
+        <thead>
+            <tr>
+                <th>Kategori</th>
+                <th>Değer</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Bu bölüm JS ile doldurulacak -->
+            <tr>
+                <td>Kullanıcı Adı</td>
+                <td id="stat-username"></td>
+            </tr>
+            <tr>
+                <td>Toplam Kazanılan Oyunlar</td>
+                <td id="stat-total-wins"></td>
+            </tr>
+            <tr>
+                <td>Toplam Oyunlar</td>
+                <td id="stat-total-games"></td>
+            </tr>
+            <tr>
+                <td>Casual Rating</td>
+                <td id="stat-casual-rating"></td>
+            </tr>
+            <tr>
+                <td>Tournament Rating</td>
+                <td id="stat-tournament-rating"></td>
+            </tr>
+            <tr>
+                <td>Atılan Goller</td>
+                <td id="stat-goals-scored"></td>
+            </tr>
+            <tr>
+                <td>Yenilen Goller</td>
+                <td id="stat-goals-conceded"></td>
+            </tr>
+            <tr>
+                <td>Kazanma Oranı</td>
+                <td id="stat-win-rate"></td>
+            </tr>
+            <tr>
+                <td>Seri</td>
+                <td id="stat-streak"></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .profile-stats {
+        margin: 20px auto;
+        width: 80%;
+        text-align: center;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        padding: 20px;
+        background-color: #f9f9f9;
+    }
+
+    #profile-stats-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px auto;
+    }
+
+    #profile-stats-table th, #profile-stats-table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+    }
+
+    #profile-stats-table th {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    #profile-stats-table td {
+        text-align: left;
+    }
+</style>

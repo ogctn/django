@@ -13,13 +13,17 @@ done
 echo "PostgreSQL is up - continuing..."
 
 # Static dosyaları topla
-echo "Collecting static files..."
-python manage.py collectstatic --noinput
+# echo "Collecting static files..."
+# python manage.py collectstatic --noinput
 
-# Django migrasyonlarını çalıştır
-echo "Running database migrations..."
-python manage.py makemigrations
-python manage.py migrate
+# # Django migrasyonlarını çalıştır
+# echo "Running database migrations..."
+# python manage.py makemigrations
+# python manage.py migrate
+
+# Kullanıcı modeli migrasyonu (Varsa)
+# echo "Running user migrations (if exists)..."
+# python manage.py makemigrations users || echo "Users app not found, skipping..."
 
 # Django sunucusunu başlat
 echo "Starting Django server..."

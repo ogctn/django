@@ -16,6 +16,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import *
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
+from django.http import JsonResponse
+import json
+from django.shortcuts import get_object_or_404
 
 class VerifyTwoFactorView(APIView):
     permission_classes = [IsAuthenticated]
@@ -62,8 +65,8 @@ class GetQrCode(APIView):
 
 
 INTRA_CLIENT_ID = 'u-s4t2ud-0d930db14b6e4ce5c5444d9e4a6ec2a7cbfebd777c72611065425e8de4f96f3d'
-INTRA_CLIENT_SECRET = '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'
-REDIRECT_URI = 'http://localhost/'
+INTRA_CLIENT_SECRET = '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'
+REDIRECT_URI = 'http://10.11.244.78/'
 
 class OAuthCallbackView(APIView):
     permission_classes = [AllowAny]
@@ -98,6 +101,7 @@ class OAuthCallbackView(APIView):
         })
         
         user_info = user_response.json()
+        profile_image_url = user_info.get('image', {}).get('link', '')
 
         # Kullanıcıyı kaydet veya güncelle
         user, created = CustomUser.objects.update_or_create(
@@ -109,6 +113,11 @@ class OAuthCallbackView(APIView):
                 'last_name': user_info.get('last_name', ''),
             }
         )
+
+        #ilk kez oluşurken profil fotosunu intradan alır
+        if created and profile_image_url:
+            user.profile_picture = profile_image_url
+            user.save()
 
         # Parola ayarı yoksa rastgele parola ayarla
         if created:
@@ -140,7 +149,20 @@ class OAuthCallbackView(APIView):
             secure=True,
             samesite='None'
         )
-
+        response.set_cookie(
+            key='access',
+            value=str(refresh.access_token),
+            httponly=True,
+            secure=True,
+            samesite='None'
+        )
+        response.set_cookie(
+            key='username',
+            value=user.username,
+            httponly=False,
+            secure=True,
+            samesite='None'
+        )
         return response
 
 class CSRFTokenView(APIView):
@@ -167,7 +189,7 @@ class RegisterView(generics.CreateAPIView):
         serializer = CustomUserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()  # Kullanıcı oluşturuluyor
-            #user.generate_secret_key()  # Secret key otomatik olarak atanıyor
+            user.generate_secret_key()  # Secret key otomatik olarak atanıyor
             return Response({'message': 'User registered successfully'}, status=201)
         return Response(serializer.errors, status=400)
 
@@ -215,15 +237,44 @@ class LoginView(APIView):
             secure=True,
             samesite='None'
         )
+        response.set_cookie(
+            key='access',
+            value=str(refresh.access_token),  # Refresh token cookie'ye yazılır
+            httponly=True,
+            secure=True,
+            samesite='None'
+        )
+        response.set_cookie(
+            key='username',
+            value=user.username,
+            httponly=False,
+            secure=True,
+            samesite='None'
+        )
         return response
 
 class LogoutView(APIView):
     def post(self, request):
         response = Response()
-        response.delete_cookie('jwt')  # Çerezi sil
         response.data = {
             'message': 'Logged out successfully'
         }
+        response.set_cookie(
+            key='refresh',
+            value='',
+            httponly=True,
+            secure=True,
+            samesite='None',
+            max_age=0  # Cookie süresini sıfır yapar
+        )
+        response.set_cookie(
+            key='access',
+            value='',
+            httponly=True,
+            secure=True,
+            samesite='None',
+            max_age=0  # Cookie süresini sıfır yapar
+        )
         return response
 
 class UserProfileView(APIView):
@@ -242,6 +293,17 @@ class UserProfileView(APIView):
             'user_data': serializer.data,
             'token_data': decoded_payload
         })
+
+# class OtherUserProfileView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [JWTAuthentication]
+
+#     def get(self, request, username):
+#         # Belirtilen kullanıcıyı bul
+#         user = get_object_or_404(CustomUser, username=username)
+#         serializer = CustomUserSerializer(user)
+
+#         return Response(serializer.data)
 
 class RefreshTokenView(APIView):
     permission_classes = [AllowAny]
@@ -341,7 +403,7 @@ class UpdateBioView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
 
-    def put(self, request):
+    def post(self, request):
         bio_text = request.data.get('bio')
 
         if not bio_text:
@@ -368,6 +430,64 @@ class UserBioView(APIView):
             "email": user.email,
             "bio": user.bio
         }, status=status.HTTP_200_OK)
+
+
+class SearchUserView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def post(self, request, *args, **kwargs):
+        search_query = request.data.get('username', '').strip()
+
+        if not search_query:
+            return Response({"error": "Kullanıcı adı boş olamaz."}, status=400)
+
+        users = CustomUser.objects.filter(username__exact=search_query)
+        if (request.user.username == search_query):
+            response = UserProfileView().get(request)
+            response_data = response.data
+            response_data['is_self'] = True
+            return Response(response_data, status=200)
+
+        user_data = CustomUserSerializer(users, many=True).data
+        return Response({"users": user_data, "is_self": False}, status=200)
+
+
+class VerifyTokenView(APIView):
+    """
+    Token doğrulama ve kimlik doğrulama için genel bir endpoint.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        token = request.data.get('token')
+
+        if not token:
+            return Response({'error': 'Token is missing'}, status=400)
+
+        try:
+            # Token doğrulama işlemi
+            jwt_auth = JWTAuthentication()
+            validated_token = jwt_auth.get_validated_token(token)
+            user = jwt_auth.get_user(validated_token)
+
+            # Kullanıcı bilgilerini döndür
+            return Response({
+                'status': 'success',
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'isActiveTwoFactor': user.isActiveTwoFactor,
+                },
+                'token_data': validated_token.payload  # Token payload bilgileri
+            })
+
+        except AuthenticationFailed as e:
+            return Response({'error': 'Invalid or expired token', 'details': str(e)}, status=403)
+
+        except Exception as e:
+            return Response({'error': 'Internal Server Error', 'details': str(e)}, status=500)
         
         
 

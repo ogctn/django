@@ -33,7 +33,7 @@ build:
 	@$(COMPOSE) build --no-cache
 
 build_nginx:
-	@$(COMPOSE) build nginx  --no-cache
+	@$(COMPOSE) build nginx --no-cache
 
 build_backend:
 	@$(COMPOSE) build backend  --no-cache

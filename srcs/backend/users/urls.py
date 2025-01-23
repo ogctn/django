@@ -1,6 +1,8 @@
 from django.urls import path
 from .views import * #RegisterView, CSRFTokenView, LoginView, LogoutView, UserProfileView, RefreshTokenView, OAuthCallbackView, SetTwoFactorView
 
+from rest_framework_simplejwt.views import TokenVerifyView
+
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
@@ -15,5 +17,9 @@ urlpatterns = [
     path('upload-profile-pic/', UploadProfilePictureView.as_view(), name='upload-profile-pic'),
     path('user-bio/', UserBioView.as_view(), name='user-bio'),
     path('update-bio/', UpdateBioView.as_view(), name='update-bio'),
+    path('search/', SearchUserView.as_view(), name='search'),
 
+    path('verify-token/', VerifyTokenView.as_view(), name='token_verify'),
+
+    #path('otherProfile/', OtherUserProfileView.as_view(), name='otherProfile'),
 ]

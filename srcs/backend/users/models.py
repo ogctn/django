@@ -11,16 +11,22 @@ class CustomUser(AbstractUser):
     qr_code = models.TextField(blank=True, null=True)
     secret_key = models.CharField(max_length=64, blank=True, null=True)
     friends = models.ManyToManyField('self', symmetrical=True, blank=True)  # Arkadaşlar
-    blocked_users = models.ManyToManyField(
-        'self', 
-        symmetrical=False, 
-        related_name='blocked_by_customuser',
-        blank=True
-    )
+    blocked_users = models.ManyToManyField('self', symmetrical=False, related_name='blocked_by', blank=True)  # Engellenen kullanıcılar
     friend_requests = models.ManyToManyField('self', symmetrical=False, related_name='pending_requests', blank=True)  # Arkadaşlık istekleri
-    played_games = models.JSONField(default=list, blank=True)  # Oynanan oyunlar (JSON format)
-    game_rank = models.IntegerField(default=0)  # Oyun sıralaması (başlangıç 0)
-    game_requests = models.ManyToManyField('self', symmetrical=False, related_name='games_requests', blank=True)  # Oyun istekleri
+
+    # Suleyman eklenilenler
+    total_games = models.IntegerField(default=0)
+    total_wins = models.IntegerField(default=0)
+    casual_rating = models.IntegerField(default=500)
+
+    tournament_total = models.IntegerField(default=0)
+    tournament_wins = models.IntegerField(default=0)
+    tournament_rating = models.IntegerField(default=500)
+
+    win_streak = models.IntegerField(default=0)
+    lose_streak = models.IntegerField(default=0)
+    goals_scored = models.IntegerField(default=0)
+    goals_conceded = models.IntegerField(default=0)
 
 
     def generate_secret_key(self):
